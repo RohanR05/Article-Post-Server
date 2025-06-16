@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 222;
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 app.use(cors());
@@ -29,7 +29,13 @@ async function run() {
       .collection("articles");
 
     app.get("/articles", async (req, res) => {
-      const cursor = articlesCollections.find();
+      const email = req.query.email;
+      const query = {};
+      if (email) {
+        query.email = email;
+      }
+
+      const cursor = articlesCollections.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -40,6 +46,20 @@ async function run() {
       const result = await articlesCollections.insertOne(newArticle);
       res.send(result);
     });
+
+    app.delete("/articles/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await articlesCollections.deleteOne(query);
+      res.send(result);
+    });
+
+    // app.get("/aritclesByEmail", async (req, res) => {
+    //   const email = req.query.email;
+    //   const query = { email: email };
+    //   const result = await articlesCollections.find(query).toArray();
+    //   res.send(result);
+    // });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
