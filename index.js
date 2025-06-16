@@ -34,6 +34,13 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/articles", async (req, res) => {
+      const newArticle = req.body;
+      console.log(newArticle);
+      const result = await articlesCollections.insertOne(newArticle);
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
