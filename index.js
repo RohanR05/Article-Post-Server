@@ -54,26 +54,26 @@ async function run() {
       res.send(result);
     });
 
-    app.put("/articles/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
-      const user = req.body;
+app.put("/articles/:id", async (req, res) => {
+  const id = req.params.id;
+  const filter = { _id: new ObjectId(id) };
+  const updatedData = req.body;
 
-      const updateArticle = {
-        $set: {
-          name: user.name,
-          email: user.email,
-        },
-      };
-      const options = { upsert: true };
-      console.log(user);
-      const result = await articlesCollections.updateOne(
-        filter,
-        updateArticle,
-        options
-      );
-      res.send(result);
-    });
+  const updateArticle = {
+    $set: {
+      title: updatedData.title,
+      content: updatedData.content,
+      tags: updatedData.tags,
+      category: updatedData.category,
+      author_photo: updatedData.author_photo,
+    },
+  };
+
+  const options = { upsert: false };
+
+  const result = await articlesCollections.updateOne(filter, updateArticle, options);
+  res.send(result);
+});
 
     app.delete("/articles/:id", async (req, res) => {
       const id = req.params.id;
