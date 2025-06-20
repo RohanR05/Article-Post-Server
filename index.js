@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 222;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
@@ -28,6 +29,13 @@ async function run() {
       .db("assignment-11")
       .collection("articles");
 
+    app.post("/jwt", async (req, res) => {
+      const { email } = req.body;
+      const user = { email };
+      const token = jwt.sign(user, "secret", { expiresIn: "1h" });
+      res.send({ token });
+    });
+
     app.get("/articles", async (req, res) => {
       const email = req.query.email;
       const query = {};
@@ -54,26 +62,30 @@ async function run() {
       res.send(result);
     });
 
-app.put("/articles/:id", async (req, res) => {
-  const id = req.params.id;
-  const filter = { _id: new ObjectId(id) };
-  const updatedData = req.body;
+    app.put("/articles/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedData = req.body;
 
-  const updateArticle = {
-    $set: {
-      title: updatedData.title,
-      content: updatedData.content,
-      tags: updatedData.tags,
-      category: updatedData.category,
-      author_photo: updatedData.author_photo,
-    },
-  };
+      const updateArticle = {
+        $set: {
+          title: updatedData.title,
+          content: updatedData.content,
+          tags: updatedData.tags,
+          category: updatedData.category,
+          author_photo: updatedData.author_photo,
+        },
+      };
 
-  const options = { upsert: false };
+      const options = { upsert: false };
 
-  const result = await articlesCollections.updateOne(filter, updateArticle, options);
-  res.send(result);
-});
+      const result = await articlesCollections.updateOne(
+        filter,
+        updateArticle,
+        options
+      );
+      res.send(result);
+    });
 
     app.delete("/articles/:id", async (req, res) => {
       const id = req.params.id;
@@ -81,13 +93,6 @@ app.put("/articles/:id", async (req, res) => {
       const result = await articlesCollections.deleteOne(query);
       res.send(result);
     });
-
-    // app.get("/aritclesByEmail", async (req, res) => {
-    //   const email = req.query.email;
-    //   const query = { email: email };
-    //   const result = await articlesCollections.find(query).toArray();
-    //   res.send(result);
-    // });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
