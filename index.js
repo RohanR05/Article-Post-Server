@@ -2,12 +2,40 @@ const express = require("express");
 const cors = require("cors");
 const app = express();
 const jwt = require("jsonwebtoken");
-const port = process.env.PORT || 222;
+const cookieParser = require("cookie-parser");
+const port = process.env.PORT || 5000;
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://assignment-11-49577.web.app"],
+    credentials: true,
+  })
+);
 app.use(express.json());
+app.use(cookieParser());
+
+const logger = (req, res, next) => {
+  console.log("inside the logger middleware");
+  next();
+};
+
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token;
+  console.log("cookie in the middleware", token);
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.fxlcgfl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -31,12 +59,20 @@ async function run() {
 
     app.post("/jwt", async (req, res) => {
       const { email } = req.body;
-      const user = { email };
-      const token = jwt.sign(user, "secret", { expiresIn: "1h" });
-      res.send({ token });
+      const userData = { email };
+      const token = jwt.sign(userData, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: true, //deplpy:true//
+        sameSite: "none", //deplpy:"none"//
+        maxAge: 3 * 24 * 60 * 60 * 1000,
+      });
+      res.send({ success: true });
     });
 
-    app.get("/articles", async (req, res) => {
+    app.get("/articles", verifyToken, logger, async (req, res) => {
       const email = req.query.email;
       const query = {};
       if (email) {
@@ -55,7 +91,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/articles/:id", async (req, res) => {
+    app.get("/articles/:id", verifyToken, logger, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await articlesCollections.findOne(query);
