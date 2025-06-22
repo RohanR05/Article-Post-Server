@@ -72,7 +72,7 @@ async function run() {
       res.send({ success: true });
     });
 
-    app.get("/articles", verifyToken, logger, async (req, res) => {
+    app.get("/articles",async (req, res) => {
       const email = req.query.email;
       const query = {};
       if (email) {
@@ -84,14 +84,14 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/articles", async (req, res) => {
+    app.post("/articles", verifyToken, logger,  async (req, res) => {
       const newArticle = req.body;
       console.log(newArticle);
       const result = await articlesCollections.insertOne(newArticle);
       res.send(result);
     });
 
-    app.get("/articles/:id", verifyToken, logger, async (req, res) => {
+    app.get("/articles/:id", verifyToken, logger,  async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await articlesCollections.findOne(query);
